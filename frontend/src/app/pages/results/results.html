@@ -1,0 +1,216 @@
+<div class="page">
+  @if (loadError(); as msg) {
+    <div class="alert error" role="alert">
+      <mat-icon>error</mat-icon>
+      <div>
+        {{ msg }}
+        <div><button mat-button (click)="startPolling(jobId())">Retry</button> <a mat-button routerLink="/jobs">All jobs</a></div>
+      </div>
+    </div>
+  } @else if (!job()) {
+    <div class="row muted"><mat-spinner diameter="20" /> Loading results…</div>
+  } @else {
+    @let j = job()!;
+    <div class="page-head">
+      <div>
+        <h1>{{ j.job_title || 'Ranked candidates' }}</h1>
+        <p>
+          <span class="chip" [class.ok]="j.status === 'completed'" [class.bad]="j.status === 'failed'">{{ JOB_STATE_LABEL[j.status] }}</span>
+          {{ j.progress.total }} resumes · model <strong>{{ j.model }}</strong> · {{ j.created_at | date: 'medium' }}
+        </p>
+      </div>
+      <div class="row">
+        <button mat-button class="danger" (click)="deleteJob()" matTooltip="Permanently delete this job and all candidate data">
+          <mat-icon>delete</mat-icon> {{ confirmDelete() ? 'Click again to delete' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+
+    @if (active()) {
+      <section class="panel progress fade-in" aria-live="polite">
+        <div class="row">
+          <strong>
+            @if (j.status === 'generating_rubric') { Generating rubric… }
+            @else { Scoring {{ j.progress.done + j.progress.failed }} of {{ j.progress.total }} }
+          </strong>
+          <span class="spacer"></span>
+          @if (eta(); as e) { <span class="muted small">about {{ e }} left</span> }
+        </div>
+        <mat-progress-bar [mode]="j.status === 'generating_rubric' ? 'indeterminate' : 'determinate'" [value]="j.progress.percent" />
+        <p class="muted small">Results appear below as each resume finishes. You can leave this page; scoring continues on the server.</p>
+      </section>
+    }
+    @if (j.error) {
+      <div class="alert error" role="alert"><mat-icon>error</mat-icon><div>{{ j.error }}</div></div>
+    }
+
+    <section class="panel flush">
+      <div class="toolbar row">
+        <mat-slide-toggle [checked]="mustHaveOnly()" (change)="mustHaveOnly.set($event.checked)">Meets all must-haves</mat-slide-toggle>
+        <mat-button-toggle-group
+          [value]="decisionFilter()"
+          (change)="decisionFilter.set($event.value)"
+          aria-label="Filter by decision"
+          hideSingleSelectionIndicator
+        >
+          <mat-button-toggle value="all">All</mat-button-toggle>
+          <mat-button-toggle value="pending">Undecided</mat-button-toggle>
+          <mat-button-toggle value="shortlisted">Shortlisted ({{ counts().shortlisted }})</mat-button-toggle>
+          <mat-button-toggle value="rejected">Rejected ({{ counts().rejected }})</mat-button-toggle>
+        </mat-button-toggle-group>
+        <label class="min-score small">
+          Min score
+          <input type="number" min="0" max="100" step="5" [value]="minScore()" (input)="minScore.set(+$any($event.target).value || 0)" />
+        </label>
+        <span class="spacer"></span>
+        <button mat-flat-button [disabled]="selected().size < 2" (click)="compare()" matTooltip="Tick 2 or 3 candidates to compare">
+          <mat-icon>compare_arrows</mat-icon> Compare ({{ selected().size }}/{{ MAX_COMPARE }})
+        </button>
+      </div>
+
+      <div class="scroll-x">
+        <table mat-table [dataSource]="rows()" matSort [matSortActive]="sort().active" [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef><span class="sr-only">Select to compare</span></th>
+            <td mat-cell *matCellDef="let c" (click)="$event.stopPropagation()">
+              <mat-checkbox
+                [checked]="selected().has(c.id)"
+                [disabled]="c.status !== 'done' || (!selected().has(c.id) && selected().size >= MAX_COMPARE)"
+                (change)="toggleSelect(c)"
+                [attr.aria-label]="'Select ' + store.displayName(c) + ' to compare'"
+              />
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="rank">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>#</th>
+            <td mat-cell *matCellDef="let c" class="rank">{{ c.rank ?? '–' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="candidate">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Candidate</th>
+            <td mat-cell *matCellDef="let c">
+              <div class="name">{{ store.displayName(c) }}</div>
+              <div class="muted small">{{ store.displayFilename(c) }}</div>
+            </td>
+          </ng-container>
+
+          <!-- Best-fit role (designation) column hidden for now; also re-enable 'role' in results.ts columns.
+          <ng-container matColumnDef="role">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Best-fit role</th>
+            <td mat-cell *matCellDef="let c">
+              @if (c.best_fit_role) {
+                <span class="role" matTooltip="Job title the model judged this resume best suited for">{{ c.best_fit_role }}</span>
+              } @else {
+                <span class="muted">–</span>
+              }
+            </td>
+          </ng-container>
+          -->
+
+          <ng-container matColumnDef="score">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Score</th>
+            <td mat-cell *matCellDef="let c">
+              @switch (c.status) {
+                @case ('done') {
+                  <div class="score">
+                    <div class="bar"><div class="fill" [style.width.%]="c.total_score"></div></div>
+                    <span class="num">{{ c.total_score | number: '1.0-1' }}</span>
+                  </div>
+                  @if (c.cached) {
+                    <span class="muted small" matTooltip="Same resume, rubric and model were scored before; the saved result was reused">Reused</span>
+                  }
+                }
+                @case ('scoring') { <span class="row muted small"><mat-spinner diameter="16" /> Scoring…</span> }
+                @case ('pending') { <span class="muted small">Waiting</span> }
+                @case ('error') { <span class="chip bad" [matTooltip]="c.error">Failed</span> }
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="musthave">
+            <th mat-header-cell *matHeaderCellDef>Must-haves</th>
+            <td mat-cell *matCellDef="let c">
+              @if (c.status === 'done') {
+                @if (c.must_have_ok) {
+                  <span class="chip ok"><mat-icon>check</mat-icon> All met</span>
+                } @else {
+                  <span class="chip bad" [matTooltip]="'Missing: ' + c.must_have_missing.join(', ')">
+                    <mat-icon>flag</mat-icon> {{ c.must_have_missing.length }} missing
+                  </span>
+                }
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="confidence">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Confidence</th>
+            <td mat-cell *matCellDef="let c">
+              @if (c.confidence_label) {
+                <span
+                  class="chip"
+                  [class.ok]="c.confidence_label === 'high'"
+                  [class.warn]="c.confidence_label === 'medium'"
+                  [class.bad]="c.confidence_label === 'low'"
+                  [matTooltip]="confidenceHelp(c)"
+                  >{{ c.confidence_label }}</span
+                >
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="decision">
+            <th mat-header-cell *matHeaderCellDef>Decision</th>
+            <td mat-cell *matCellDef="let c" (click)="$event.stopPropagation()">
+              @if (c.status === 'done') {
+                <div class="decision">
+                  <button
+                    mat-icon-button
+                    [class.on-ok]="c.decision === 'shortlisted'"
+                    (click)="setDecision(c, 'shortlisted')"
+                    [attr.aria-pressed]="c.decision === 'shortlisted'"
+                    matTooltip="Shortlist"
+                    aria-label="Shortlist"
+                  ><mat-icon>thumb_up</mat-icon></button>
+                  <button
+                    mat-icon-button
+                    [class.on-bad]="c.decision === 'rejected'"
+                    (click)="setDecision(c, 'rejected')"
+                    [attr.aria-pressed]="c.decision === 'rejected'"
+                    matTooltip="Reject"
+                    aria-label="Reject"
+                  ><mat-icon>thumb_down</mat-icon></button>
+                  @if (c.notes) { <mat-icon class="muted note" [matTooltip]="c.notes">sticky_note_2</mat-icon> }
+                </div>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let c; columns: columns"
+            class="clickable"
+            [class.dim]="c.status === 'error' || c.decision === 'rejected'"
+            (click)="open(c)"
+            (keydown.enter)="open(c)"
+            tabindex="0"
+          ></tr>
+        </table>
+      </div>
+
+      @if (rows().length === 0) {
+        <div class="empty">
+          No candidates match these filters.
+          <button mat-button (click)="clearFilters()">Clear filters</button>
+        </div>
+      } @else if (hiddenCount() > 0) {
+        <p class="muted small hidden-note">{{ hiddenCount() }} candidate(s) hidden by filters. <button mat-button (click)="clearFilters()">Show all</button></p>
+      }
+    </section>
+
+    <p class="muted small footnote">
+      Ranking: candidates meeting every must-have come first, then by weighted score. Scores are a starting point. The decision is yours.
+    </p>
+  }
+</div>

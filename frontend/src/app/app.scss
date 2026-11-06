@@ -1,0 +1,92 @@
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  padding: 10px 20px;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  text-decoration: none;
+  font: 800 1.15rem 'Bricolage Grotesque', system-ui, sans-serif;
+
+  mat-icon {
+    color: var(--accent);
+  }
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+
+  a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 99px;
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover {
+      background: var(--accent-soft);
+      color: var(--ink);
+    }
+    &.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      .n {
+        background: var(--accent);
+        color: var(--on-accent);
+      }
+    }
+  }
+
+  .n {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    background: var(--line);
+    color: var(--ink);
+  }
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .user {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .steps a {
+    padding: 6px 8px;
+  }
+  .blind {
+    width: 100%;
+  }
+}

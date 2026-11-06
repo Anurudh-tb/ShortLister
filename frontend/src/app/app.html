@@ -1,0 +1,37 @@
+@if (!isLogin()) {
+<header class="top">
+  <a class="brand" routerLink="/setup">
+    <mat-icon>task_alt</mat-icon>
+    <span>Resume Shortlister</span>
+  </a>
+
+  <nav class="steps" aria-label="Workflow steps">
+    @for (s of steps; track s.path) {
+      <a [routerLink]="s.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }">
+        <span class="n">{{ s.n }}</span>{{ s.label }}
+      </a>
+    }
+  </nav>
+
+  <mat-slide-toggle
+    class="blind"
+    [checked]="store.blindMode()"
+    (change)="store.blindMode.set($event.checked)"
+    matTooltip="Hide candidate names and filenames to reduce bias while reviewing"
+  >
+    Blind review
+  </mat-slide-toggle>
+
+  <div class="account">
+    <span class="user" [matTooltip]="'Signed in as ' + auth.user()">{{ auth.user() }}</span>
+    <button mat-stroked-button type="button" (click)="signOut()">
+      <mat-icon>logout</mat-icon>
+      Sign out
+    </button>
+  </div>
+</header>
+}
+
+<main>
+  <router-outlet />
+</main>

@@ -1,0 +1,13 @@
+Senior Python Backend Engineer
+We build the APIs behind a hiring platform used by 2,000 companies.
+
+Requirements:
+- Must have 5+ years of professional Python experience
+- Strong experience building REST APIs with FastAPI or Django
+- PostgreSQL schema design and query optimisation
+- Docker and Kubernetes in production
+- AWS experience is required
+
+Nice to have:
+- Experience with LLMs or NLP pipelines
+- Mentoring junior engineers

@@ -1,0 +1,274 @@
+// Values follow the CuneiCode reference design (cuneicode-login.html), minus the
+// language picker, dark-mode button and "remember me", which aren't needed.
+:host {
+  --login-bg: #f8f8f8;
+  // Matches the mascot JPEG's own background, so the image blends into the panel.
+  --login-panel: #f2f2f2;
+  --login-surface: #ffffff;
+  --login-text: #17171c;
+  --login-text-secondary: #26262c;
+  --login-muted: #6f6f7a;
+  --login-placeholder: #a3a3ae;
+  --login-border: #e6e6ea;
+  --login-primary: #5e36ba;
+  --login-primary-top: #6a3ecf;
+  display: block;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+// No toggle on the page, but it still follows the OS theme like the rest of the app.
+@media (prefers-color-scheme: dark) {
+  :host {
+    --login-bg: #121217;
+    --login-surface: #1c1c23;
+    --login-text: #f2f2f5;
+    --login-text-secondary: #dcdce3;
+    --login-muted: #9a9aa6;
+    --login-placeholder: #6c6c78;
+    --login-border: #2e2e38;
+    --login-primary: #7c55e0;
+    --login-primary-top: #8a63ea;
+  }
+
+  // The panel keeps its light colour in dark mode (the mascot image has a light background),
+  // so the logo stays dark there.
+  .side {
+    box-shadow: 0 0 0 1px var(--login-border);
+  }
+}
+
+.login {
+  display: flex;
+  gap: 24px;
+  min-height: 100vh;
+  padding: 18px;
+  background: var(--login-bg);
+  color: var(--login-text);
+}
+
+.side {
+  flex: 0 0 48.5%;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 36px;
+  background: var(--login-panel);
+  border-radius: 24px;
+}
+
+.brand img {
+  display: block;
+  height: 27px;
+  width: auto;
+  user-select: none;
+}
+
+.mascot {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+
+  img {
+    display: block;
+    width: min(84%, 490px);
+    height: auto;
+    user-select: none;
+    pointer-events: none;
+  }
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 90px 40px 60px;
+}
+
+.form-col {
+  width: 100%;
+  max-width: 340px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 12px 0 0;
+  font-size: 14.5px;
+  color: var(--login-muted);
+}
+
+form {
+  margin-top: 36px;
+}
+
+.field + .field {
+  margin-top: 18px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--login-text-secondary);
+}
+
+input {
+  width: 100%;
+  height: 46px;
+  padding: 0 15px;
+  background: var(--login-surface);
+  border: 1px solid var(--login-border);
+  border-radius: 10px;
+  font: 400 14px/1 'Plus Jakarta Sans', system-ui, sans-serif;
+  color: var(--login-text);
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &::placeholder {
+    color: var(--login-placeholder);
+  }
+  &:focus {
+    border-color: var(--login-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--login-primary) 15%, transparent);
+  }
+}
+
+.form-row {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+// Text-style buttons (no backend routes for these yet).
+.forgot,
+.invite button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  color: var(--login-text-secondary);
+  cursor: pointer;
+  transition: color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--login-primary);
+  }
+}
+
+.forgot {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+
+  svg {
+    width: 10px;
+    height: 10px;
+    stroke: currentColor;
+  }
+}
+
+.message {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--login-muted);
+
+  &.bad {
+    color: #c62828;
+  }
+}
+
+.signin {
+  width: 100%;
+  height: 47px;
+  margin-top: 28px;
+  background: linear-gradient(180deg, var(--login-primary-top), var(--login-primary));
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  font: 700 15px/1 'Plus Jakarta Sans', system-ui, sans-serif;
+  cursor: pointer;
+  transition:
+    filter 0.15s ease,
+    transform 0.1s ease;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+  &:active:not(:disabled) {
+    transform: scale(0.99);
+  }
+  &:disabled {
+    opacity: 0.7;
+    cursor: progress;
+  }
+  &:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--login-primary) 35%, transparent);
+    outline-offset: 2px;
+  }
+}
+
+.invite {
+  margin: 26px 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--login-muted);
+
+  button {
+    margin-left: 3px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+@media (max-width: 960px) {
+  .login {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .side {
+    flex: none;
+    min-height: 380px;
+  }
+  .mascot img {
+    width: min(60%, 340px);
+  }
+  .content {
+    padding: 40px 24px 60px;
+  }
+}
+
+@media (max-width: 600px) {
+  .login {
+    padding: 12px;
+  }
+  .side {
+    min-height: 300px;
+    padding: 22px 20px;
+  }
+  .brand img {
+    height: 24px;
+  }
+  .content {
+    padding: 32px 4px 48px;
+  }
+  h1 {
+    font-size: 32px;
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "job_title": "Senior Python Backend Engineer",
+  "criteria": [
+    {
+      "name": "Python experience",
+      "description": "5+ years of professional Python development",
+      "weight": 25,
+      "must_have": true
+    },
+    {
+      "name": "REST API development",
+      "description": "Building REST APIs with FastAPI or Django",
+      "weight": 20,
+      "must_have": true
+    },
+    {
+      "name": "PostgreSQL",
+      "description": "Schema design and query optimisation",
+      "weight": 15,
+      "must_have": false
+    },
+    {
+      "name": "Docker and Kubernetes",
+      "description": "Running containers and Kubernetes in production",
+      "weight": 15,
+      "must_have": false
+    },
+    {
+      "name": "AWS",
+      "description": "Hands-on AWS experience",
+      "weight": 15,
+      "must_have": true
+    },
+    {
+      "name": "LLM / NLP",
+      "description": "Experience with LLMs or NLP pipelines (nice to have)",
+      "weight": 5,
+      "must_have": false
+    },
+    {
+      "name": "Mentoring",
+      "description": "Mentoring junior engineers (nice to have)",
+      "weight": 5,
+      "must_have": false
+    }
+  ]
+}

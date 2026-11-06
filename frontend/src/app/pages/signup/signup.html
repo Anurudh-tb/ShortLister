@@ -1,0 +1,79 @@
+<div class="login">
+  <aside class="side">
+    <div class="brand">
+      <img src="cuneicode-logo.png" alt="CuneiCode" />
+    </div>
+    <div class="mascot">
+      <img src="login-mascot.jpg" alt="" />
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="form-col">
+      <h1>Create your<br />account</h1>
+      <p class="subtitle">Choose a username and password to get started.</p>
+
+      <form (ngSubmit)="submit()" novalidate autocomplete="off">
+        <div class="field">
+          <label for="signup-username">Username</label>
+          <input
+            id="signup-username"
+            name="signup-username"
+            type="text"
+            autocomplete="off"
+            autocapitalize="none"
+            spellcheck="false"
+            placeholder="Username or email"
+            [readOnly]="locked()"
+            (focus)="unlock()"
+            [ngModel]="username()"
+            (ngModelChange)="username.set($event)"
+          />
+        </div>
+
+        <div class="field">
+          <label for="signup-password">Password</label>
+          <input
+            id="signup-password"
+            name="signup-password"
+            type="password"
+            autocomplete="new-password"
+            [placeholder]="'At least ' + minLength + ' characters, with a letter and a number'"
+            [readOnly]="locked()"
+            (focus)="unlock()"
+            [ngModel]="password()"
+            (ngModelChange)="password.set($event)"
+          />
+        </div>
+
+        <div class="field">
+          <label for="signup-confirm">Confirm password</label>
+          <input
+            id="signup-confirm"
+            name="signup-confirm"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Repeat the password"
+            [readOnly]="locked()"
+            (focus)="unlock()"
+            [ngModel]="confirm()"
+            (ngModelChange)="confirm.set($event)"
+          />
+        </div>
+
+        @if (error(); as msg) {
+          <p class="message bad" role="alert">{{ msg }}</p>
+        }
+
+        <button type="submit" class="signin" [disabled]="busy()">
+          {{ busy() ? 'Signing up…' : 'Sign up' }}
+        </button>
+      </form>
+
+      <p class="invite">
+        Already have an account?
+        <button type="button" (click)="signIn()">Sign in</button>
+      </p>
+    </div>
+  </main>
+</div>

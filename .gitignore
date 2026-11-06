@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Secrets
+.env
+
+# Local databases
+*.db
+
+# Frontend
+node_modules/
+.angular/
+dist/

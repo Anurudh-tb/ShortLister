@@ -1,0 +1,105 @@
+<div class="page">
+  @if (!store.rubric()) {
+    <div class="panel empty">
+      <p>Create a rubric before uploading resumes.</p>
+      <a mat-flat-button routerLink="/setup">Go to setup</a>
+    </div>
+  } @else {
+    <div class="page-head">
+      <div>
+        <h1>Upload resumes</h1>
+        <p>
+          Scoring{{ store.rubric()!.job_title ? ' for ' + store.rubric()!.job_title : '' }} with
+          <strong>{{ store.model() ?? config()?.default_model }}</strong>.
+          @if (config(); as c) {
+            Up to {{ c.max_resumes_per_job }} files, {{ c.max_file_mb }} MB each.
+            @if (!c.persist_resume_text) { Resume text is not stored after scoring. }
+          }
+        </p>
+      </div>
+      <a mat-button routerLink="/rubric"><mat-icon>edit</mat-icon> Edit rubric</a>
+    </div>
+
+    <div class="grid-2">
+      <section class="panel">
+        <h2>Resumes</h2>
+        <app-drop-zone
+          [multiple]="true"
+          accept=".pdf,.docx,.txt"
+          label="Choose resumes"
+          hint="PDF, DOCX or TXT · scanned PDFs need OCR"
+          (files)="onFiles($event)"
+        />
+
+        @if (rows().length === 0) {
+          <p class="muted small">No files yet.</p>
+        } @else {
+          <ul class="files" aria-live="polite">
+            @for (r of rows(); track r.key) {
+              <li class="fade-in" [class]="r.state">
+                <mat-icon class="icon">
+                  @switch (r.state) {
+                    @case ('ready') { description }
+                    @case ('invalid') { block }
+                    @case ('uploading') { cloud_upload }
+                    @case ('queued') { check_circle }
+                    @case ('error') { error }
+                  }
+                </mat-icon>
+                <div class="meta">
+                  <span class="name">{{ r.file.name }}</span>
+                  <span class="msg small">{{ formatBytes(r.file.size) }} · {{ r.message }}</span>
+                </div>
+                @if (!submitted()) {
+                  <button mat-icon-button (click)="remove(r.key)" [attr.aria-label]="'Remove ' + r.file.name"><mat-icon>close</mat-icon></button>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="panel">
+        <h2>Start scoring</h2>
+        @if (jobId(); as id) {
+          <div class="answer">
+            <p>
+              <strong>Scoring has started.</strong>
+              {{ rows().length - serverErrors() }} resume(s) queued
+              @if (serverErrors()) { · {{ serverErrors() }} could not be read }.
+            </p>
+            <a mat-flat-button [routerLink]="['/jobs', id]">Open live results <mat-icon iconPositionEnd>arrow_forward</mat-icon></a>
+          </div>
+          <button mat-button (click)="startOver()">Upload another batch</button>
+        } @else {
+          <p class="muted">
+            {{ readyRows().length }} file(s) ready.
+            @if (readyRows().length) {
+              Estimated time on a CPU-only machine: <strong>~{{ estimate() }}</strong>. You can leave this page while it runs.
+            }
+          </p>
+          @if (overLimit()) {
+            <div class="alert" role="alert"><mat-icon>warning</mat-icon><div>Too many files; the limit is {{ config()?.max_resumes_per_job }} per job.</div></div>
+          }
+          @if (uploadPercent() !== null) {
+            <mat-progress-bar mode="determinate" [value]="uploadPercent()!" />
+            <p class="small muted">Uploading and extracting text… {{ uploadPercent() }}%</p>
+          }
+          <button mat-flat-button [disabled]="readyRows().length === 0 || overLimit() || submitted()" (click)="start()">
+            <mat-icon>play_arrow</mat-icon> Score {{ readyRows().length || '' }} resume{{ readyRows().length === 1 ? '' : 's' }}
+          </button>
+        }
+        @if (error(); as msg) {
+          <div class="alert error" role="alert"><mat-icon>error</mat-icon><div>{{ msg }}</div></div>
+        }
+
+        <h3>Rubric</h3>
+        <div class="chips">
+          @for (c of store.rubric()!.criteria; track c.name) {
+            <span class="chip" [class.warn]="c.must_have">{{ c.name }} · {{ c.weight }}{{ c.must_have ? ' · must' : '' }}</span>
+          }
+        </div>
+      </section>
+    </div>
+  }
+</div>

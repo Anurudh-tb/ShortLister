@@ -1,0 +1,25 @@
+# Local MySQL for the backend: `docker compose up -d mysql`, then in backend/.env set
+# DATABASE_URL=mysql+pymysql://shortlister:shortlister@localhost:3306/shortlister?charset=utf8mb4
+# Tables are created automatically when the backend starts.
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: shortlister
+      MYSQL_USER: shortlister
+      MYSQL_PASSWORD: Root@1234
+      MYSQL_ROOT_PASSWORD: shortlister-root
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ushortlister", "-pshortlister"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  mysql-data:

@@ -1,0 +1,159 @@
+textarea {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+
+.full {
+  width: 100%;
+}
+
+.go {
+  margin-top: 4px;
+  mat-spinner {
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+}
+
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+
+  .name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// Secondary, compact drop zone under the main resume picker.
+.folder-pick ::ng-deep .drop {
+  padding: 10px;
+}
+
+.resume-head {
+  margin-bottom: 4px;
+}
+
+.resume-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  // Every file stays visible; long lists scroll instead of collapsing.
+  max-height: 260px;
+  overflow-y: auto;
+
+  .file-chip {
+    margin-bottom: 6px;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.how {
+  padding-left: 20px;
+  margin: 0;
+  li {
+    margin-bottom: 10px;
+  }
+}
+
+.defaults {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+
+  &.active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  summary {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+    &::after {
+      content: 'Show';
+      margin-left: auto;
+      padding-left: 12px;
+      color: var(--accent);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    mat-icon {
+      flex: none;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      color: var(--accent);
+    }
+  }
+
+  &[open] summary::after {
+    content: 'Hide';
+  }
+
+  h3 {
+    margin: 14px 0 6px;
+    font-size: 0.9rem;
+  }
+}
+
+.criteria {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  th,
+  td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+  th:not(:first-child),
+  td:not(:first-child) {
+    width: 1%;
+    white-space: nowrap;
+  }
+}
+
+.default-jd {
+  margin: 0;
+  padding: 10px 12px;
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font: inherit;
+  font-size: 0.85rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}

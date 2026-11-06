@@ -1,0 +1,107 @@
+.nav {
+  margin-bottom: 8px;
+}
+
+.headline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+
+  .big {
+    font: 800 2.6rem/1 'Bricolage Grotesque', sans-serif;
+    font-variant-numeric: tabular-nums;
+    small {
+      font-size: 1rem;
+      color: var(--muted);
+    }
+  }
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.list {
+  margin: 0;
+  padding-left: 20px;
+}
+.ok-list li::marker {
+  color: var(--ok);
+}
+.gap-list li::marker {
+  color: var(--warn);
+}
+
+.on-ok {
+  color: var(--ok) !important;
+  background: var(--ok-soft) !important;
+}
+.on-bad {
+  color: var(--bad) !important;
+  background: var(--bad-soft) !important;
+}
+
+.notes-label {
+  display: block;
+  font-weight: 500;
+  margin: 16px 0 6px;
+}
+textarea {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+
+.ok-text {
+  color: var(--ok);
+}
+.bad-text {
+  color: var(--bad);
+}
+
+.criteria {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.crit {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.crit-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.crit-name {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.evidence {
+  margin-top: 8px;
+}
+blockquote {
+  margin: 6px 0 0;
+  padding: 0;
+}
+.reasoning {
+  margin: 6px 0 0;
+  color: var(--muted);
+}

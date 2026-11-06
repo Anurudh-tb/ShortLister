@@ -1,0 +1,74 @@
+.progress {
+  margin-bottom: 16px;
+  padding-top: 14px;
+  mat-progress-bar {
+    margin: 10px 0 4px;
+  }
+}
+
+.toolbar {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.min-score {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  input {
+    width: 64px;
+    font: inherit;
+    color: inherit;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 4px 6px;
+  }
+}
+
+table {
+  width: 100%;
+  min-width: 760px;
+}
+
+.rank {
+  font: 800 1.1rem 'Bricolage Grotesque', sans-serif;
+  width: 48px;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.decision {
+  display: flex;
+  align-items: center;
+  .on-ok {
+    color: var(--ok);
+    background: var(--ok-soft);
+  }
+  .on-bad {
+    color: var(--bad);
+    background: var(--bad-soft);
+  }
+  .note {
+    margin-left: 4px;
+  }
+}
+
+tr.dim td {
+  opacity: 0.6;
+}
+
+.danger {
+  color: var(--bad);
+}
+
+.hidden-note,
+.empty {
+  padding: 8px 16px;
+}
+
+.footnote {
+  margin-top: 12px;
+}

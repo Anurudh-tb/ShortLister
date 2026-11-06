@@ -1,0 +1,73 @@
+<div class="login">
+  <aside class="side">
+    <div class="brand">
+      <img src="cuneicode-logo.png" alt="CuneiCode" />
+    </div>
+    <div class="mascot">
+      <img src="login-mascot.jpg" alt="" />
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="form-col">
+      <h1>Welcome to<br />Customer Portal</h1>
+      <p class="subtitle">Sign in to track your issues, projects and releases.</p>
+
+      <form (ngSubmit)="submit()" novalidate autocomplete="off">
+        <div class="field">
+          <label for="login-username">Username</label>
+          <input
+            id="login-username"
+            name="login-username"
+            type="text"
+            autocomplete="off"
+            autocapitalize="none"
+            spellcheck="false"
+            placeholder="Username"
+            [readOnly]="locked()"
+            (focus)="unlock()"
+            [ngModel]="username()"
+            (ngModelChange)="username.set($event)"
+          />
+        </div>
+
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input
+            id="login-password"
+            name="login-password"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Password"
+            [readOnly]="locked()"
+            (focus)="unlock()"
+            [ngModel]="password()"
+            (ngModelChange)="password.set($event)"
+          />
+        </div>
+
+        <div class="form-row">
+          <button type="button" class="forgot" (click)="forgotPassword()">
+            Forgot password
+            <svg viewBox="0 0 10 10" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 8 8 2M3.5 2H8v4.5" />
+            </svg>
+          </button>
+        </div>
+
+        @if (error(); as msg) {
+          <p class="message bad" role="alert">{{ msg }}</p>
+        } @else if (info(); as msg) {
+          <p class="message" role="status">{{ msg }}</p>
+        }
+
+        <button type="submit" class="signin" [disabled]="busy()">{{ busy() ? 'Signing in…' : 'Sign in' }}</button>
+      </form>
+
+      <p class="invite">
+        Don't have an account?
+        <button type="button" (click)="signUp()">Sign up</button>
+      </p>
+    </div>
+  </main>
+</div>

@@ -1,0 +1,137 @@
+<div class="page">
+  <div class="nav row">
+    <a mat-button [routerLink]="['/jobs', jobId()]"><mat-icon>arrow_back</mat-icon> All candidates</a>
+    <span class="spacer"></span>
+    @if (prev(); as p) {
+      <a mat-button [routerLink]="['/jobs', jobId(), 'candidates', p.id]"><mat-icon>chevron_left</mat-icon> #{{ p.rank }}</a>
+    }
+    @if (next(); as n) {
+      <a mat-button [routerLink]="['/jobs', jobId(), 'candidates', n.id]">#{{ n.rank }} <mat-icon iconPositionEnd>chevron_right</mat-icon></a>
+    }
+  </div>
+
+  @if (loadError(); as msg) {
+    <div class="alert error" role="alert"><mat-icon>error</mat-icon><div>{{ msg }}</div></div>
+  } @else if (!job()) {
+    <div class="row muted"><mat-spinner diameter="20" /> Loading…</div>
+  } @else if (!candidate()) {
+    <div class="panel empty">Candidate not found in this job.</div>
+  } @else {
+    @let c = candidate()!;
+    <div class="page-head">
+      <div>
+        <h1>{{ store.displayName(c) }}</h1>
+        <p class="row">
+          @if (c.rank) { <span class="chip">Rank #{{ c.rank }}</span> }
+          <span class="muted small">{{ store.displayFilename(c) }}</span>
+        </p>
+      </div>
+      @if (c.status === 'done') {
+        <div class="headline">
+          <div class="big">{{ c.total_score | number: '1.0-1' }}<small>/100</small></div>
+          <div class="chips">
+            @if (c.must_have_ok) {
+              <span class="chip ok"><mat-icon>check</mat-icon> All must-haves met</span>
+            } @else {
+              <span class="chip bad"><mat-icon>flag</mat-icon> Missing: {{ c.must_have_missing.join(', ') }}</span>
+            }
+            <span
+              class="chip"
+              [class.ok]="c.confidence_label === 'high'"
+              [class.warn]="c.confidence_label === 'medium'"
+              [class.bad]="c.confidence_label === 'low'"
+              [matTooltip]="CONFIDENCE_HELP[c.confidence_label!]"
+              >{{ c.confidence_label }} confidence</span
+            >
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (c.status !== 'done') {
+      <div class="panel empty">
+        @switch (c.status) {
+          @case ('error') { <span class="bad-text">Could not be scored: {{ c.error }}</span> }
+          @case ('scoring') { <span class="row"><mat-spinner diameter="18" /> Scoring in progress…</span> }
+          @default { Waiting to be scored. }
+        }
+      </div>
+    } @else {
+      @for (w of c.warnings; track w) {
+        <div class="alert"><mat-icon>warning</mat-icon><div>{{ w }}</div></div>
+      }
+
+      <div class="grid-2">
+        <div class="stack">
+          <section class="panel">
+            <div class="answer">
+              <h2>Summary</h2>
+              <p>{{ c.summary || 'No summary returned.' }}</p>
+            </div>
+            <h3>Strengths</h3>
+            <ul class="list ok-list">
+              @for (s of c.strengths; track s) { <li>{{ s }}</li> } @empty { <li class="muted">None listed</li> }
+            </ul>
+            <h3>Gaps</h3>
+            <ul class="list gap-list">
+              @for (g of c.gaps; track g) { <li>{{ g }}</li> } @empty { <li class="muted">None listed</li> }
+            </ul>
+          </section>
+
+          <section class="panel">
+            <h2>Your decision</h2>
+            <div class="row">
+              <button mat-stroked-button [class.on-ok]="c.decision === 'shortlisted'" (click)="setDecision(c, 'shortlisted')" [attr.aria-pressed]="c.decision === 'shortlisted'">
+                <mat-icon>thumb_up</mat-icon> {{ c.decision === 'shortlisted' ? 'Shortlisted' : 'Shortlist' }}
+              </button>
+              <button mat-stroked-button [class.on-bad]="c.decision === 'rejected'" (click)="setDecision(c, 'rejected')" [attr.aria-pressed]="c.decision === 'rejected'">
+                <mat-icon>thumb_down</mat-icon> {{ c.decision === 'rejected' ? 'Rejected' : 'Reject' }}
+              </button>
+            </div>
+            <label class="notes-label" for="notes">Recruiter notes</label>
+            <textarea
+              id="notes"
+              rows="4"
+              maxlength="4000"
+              placeholder="e.g. Strong infra background; probe AWS depth in interview."
+              [value]="notesDraft()"
+              (input)="notesDraft.set($any($event.target).value); notesSaved.set(false)"
+            ></textarea>
+            <div class="row">
+              <button mat-flat-button [disabled]="!notesDirty() || savingNotes()" (click)="saveNotes(c)">Save notes</button>
+              @if (notesSaved() && !notesDirty()) { <span class="small ok-text" aria-live="polite">Saved</span> }
+            </div>
+          </section>
+        </div>
+
+        <section class="panel">
+          <h2>Scores by criterion</h2>
+          <ol class="criteria">
+            @for (cr of c.criteria; track cr.criterion) {
+              <li class="crit">
+                <div class="crit-head">
+                  <span class="crit-name">{{ cr.criterion }}</span>
+                  <span class="chip plain">weight {{ cr.weight }}</span>
+                  @if (cr.must_have) { <span class="chip warn">must-have</span> }
+                </div>
+                <div class="score">
+                  <div class="bar"><div class="fill" [style.width.%]="cr.score * 10"></div></div>
+                  <span class="num">{{ cr.score }}/10</span>
+                </div>
+                <div class="evidence">
+                  <app-evidence-chip [status]="cr.evidence_status" [match]="cr.evidence_match" />
+                  @if (cr.evidence_status !== 'not_found') {
+                    <blockquote class="quote" [class.unverified]="cr.evidence_status === 'unverified'">
+                      “<mark>{{ cr.evidence }}</mark>”
+                    </blockquote>
+                  }
+                </div>
+                <p class="reasoning">{{ cr.reasoning }}</p>
+              </li>
+            }
+          </ol>
+        </section>
+      </div>
+    }
+  }
+</div>

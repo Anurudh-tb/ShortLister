@@ -1,0 +1,105 @@
+<div class="page">
+  @if (!store.rubric() && rows().length === 0) {
+    <div class="panel empty">
+      <p>No rubric yet.</p>
+      <a mat-flat-button routerLink="/setup">Generate one from a job description</a>
+    </div>
+  } @else {
+    <div class="page-head">
+      <div>
+        <h1>Review the rubric</h1>
+        <p>
+          Change names, descriptions and weights, and mark which criteria are must-haves. Weights must total
+          {{ WEIGHT_TOTAL }}. Every resume is scored 0–10 on each criterion.
+        </p>
+      </div>
+      <div class="total" [class.ok]="total() === WEIGHT_TOTAL" [class.bad]="total() !== WEIGHT_TOTAL" aria-live="polite">
+        <span class="label">Total weight</span>
+        <span class="value">{{ total() }}<small>/{{ WEIGHT_TOTAL }}</small></span>
+      </div>
+    </div>
+
+    @for (w of store.rubricWarnings(); track w) {
+      <div class="alert info"><mat-icon>info</mat-icon><div>{{ w }}</div></div>
+    }
+
+    <section class="panel">
+      <mat-form-field appearance="outline" class="title">
+        <mat-label>Job title</mat-label>
+        <input matInput [value]="jobTitle()" (input)="jobTitle.set($any($event.target).value)" />
+      </mat-form-field>
+
+      <div class="grid head" aria-hidden="true">
+        <span>Criterion</span><span>What good evidence looks like</span><span>Weight</span><span>Must-have</span><span></span>
+      </div>
+
+      @for (r of rows(); track r.key; let i = $index, first = $first, last = $last) {
+        <div class="grid item fade-in">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Criterion {{ i + 1 }}</mat-label>
+            <input matInput [value]="r.name" (input)="update(r.key, { name: $any($event.target).value })" maxlength="110" required />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Description</mat-label>
+            <textarea
+              matInput
+              rows="2"
+              [value]="r.description"
+              (input)="update(r.key, { description: $any($event.target).value })"
+            ></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="weight">
+            <mat-label>Weight</mat-label>
+            <input
+              matInput
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              [value]="r.weight"
+              (input)="setWeight(r.key, $any($event.target).value)"
+            />
+          </mat-form-field>
+          <mat-checkbox [checked]="r.must_have" (change)="update(r.key, { must_have: $event.checked })">
+            <span class="must-label">Must-have</span>
+          </mat-checkbox>
+          <div class="row-actions">
+            <button mat-icon-button [disabled]="first" (click)="move(r.key, -1)" aria-label="Move up"><mat-icon>arrow_upward</mat-icon></button>
+            <button mat-icon-button [disabled]="last" (click)="move(r.key, 1)" aria-label="Move down"><mat-icon>arrow_downward</mat-icon></button>
+            <button mat-icon-button (click)="remove(r.key)" aria-label="Remove criterion" matTooltip="Remove"><mat-icon>delete</mat-icon></button>
+          </div>
+        </div>
+      }
+
+      <div class="row tools">
+        <button mat-stroked-button (click)="add()"><mat-icon>add</mat-icon> Add criterion</button>
+        <button mat-stroked-button (click)="normalize()" [disabled]="rows().length === 0" matTooltip="Rescale all weights proportionally so they add up to 100">
+          <mat-icon>balance</mat-icon> Normalize to 100
+        </button>
+        @if (store.generatedRubric()) {
+          <button mat-button (click)="reset()" matTooltip="Discard edits and restore the generated rubric"><mat-icon>restart_alt</mat-icon> Reset</button>
+        }
+        <span class="spacer"></span>
+        <span class="muted small">{{ rows().length }} criteria · {{ mustHaveCount() }} must-have</span>
+      </div>
+
+      @if (problems().length) {
+        <div class="alert" role="alert">
+          <mat-icon>warning</mat-icon>
+          <ul>
+            @for (p of problems(); track p) {
+              <li>{{ p }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </section>
+
+    <div class="actions">
+      <a mat-button routerLink="/setup"><mat-icon>arrow_back</mat-icon> Back</a>
+      <button mat-flat-button [disabled]="problems().length > 0" (click)="continue()">
+        Continue to resumes <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+      </button>
+    </div>
+  }
+</div>

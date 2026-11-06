@@ -1,0 +1,214 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Shortlist resumes, with evidence</h1>
+      <p>
+        Add a job description and the local model turns it into a weighted rubric you can edit. Every resume is then
+        scored against it, with quotes from the resume to back each score.
+      </p>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <section class="panel">
+      <h2>1. Job description</h2>
+      <app-drop-zone accept=".pdf,.docx,.txt" label="Choose the job description" hint="One file · PDF, DOCX or TXT" (files)="onFiles($event)" />
+
+      @if (jdFile(); as f) {
+        <div class="file-chip fade-in">
+          <mat-icon>description</mat-icon>
+          <span class="name">{{ f.name }}</span>
+          <span class="muted small">{{ formatBytes(f.size) }}</span>
+          <button mat-icon-button (click)="jdFile.set(null)" aria-label="Remove file"><mat-icon>close</mat-icon></button>
+        </div>
+      }
+
+      <label class="sr-only" for="jd">{{ jdFile() ? 'Extra criteria' : 'Job description text' }}</label>
+      <textarea
+        id="jd"
+        rows="11"
+        [ngModel]="jdText()"
+        (ngModelChange)="onTextInput($event)"
+        [placeholder]="jdFile() ? 'Optional: add extra criteria, e.g. Must have 3+ years of React. They are combined with the uploaded file.' : 'Or paste the job description here…'"
+      ></textarea>
+      @if (jdText()) {
+        <div class="row small muted">
+          <span class="spacer"></span>
+          <span>{{ jdText().length }} characters · ~{{ approxTokens() }} tokens</span>
+        </div>
+      }
+
+      @if (defaults(); as d) {
+        <details class="defaults" [class.active]="usingDefaults()">
+          <summary>
+            <mat-icon>{{ usingDefaults() ? 'task_alt' : 'info' }}</mat-icon>
+            <span>
+              @if (usingDefaults()) {
+                No job description added: resumes will be scored against the default
+                <strong>{{ d.criteria.job_title || 'job description' }}</strong> criteria.
+              } @else {
+                Default JD and criteria ({{ d.criteria.job_title || 'default' }}) are used when this is left empty.
+              }
+            </span>
+          </summary>
+          <h3>Default criteria</h3>
+          <table class="criteria">
+            <thead>
+              <tr><th>Criterion</th><th>Weight</th><th>Must-have</th></tr>
+            </thead>
+            <tbody>
+              @for (c of d.criteria.criteria; track c.name) {
+                <tr>
+                  <td>
+                    <div>{{ c.name }}</div>
+                    @if (c.description) {
+                      <div class="muted small">{{ c.description }}</div>
+                    }
+                  </td>
+                  <td>{{ c.weight }}%</td>
+                  <td>{{ c.must_have ? 'Yes' : '' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <h3>Default job description</h3>
+          <pre class="default-jd">{{ d.jd }}</pre>
+        </details>
+      } @else if (config() && usingDefaults()) {
+        <p class="muted small">Add a job description: no default JD is configured on the server.</p>
+      }
+
+      <h2>2. Resumes</h2>
+      <app-drop-zone
+        [multiple]="true"
+        accept=".pdf,.docx,.txt"
+        label="Choose resumes"
+        hint="Several files · PDF, DOCX or TXT"
+        (files)="onResumes($event)"
+      />
+      <app-drop-zone
+        class="folder-pick"
+        [folder]="true"
+        [multiple]="true"
+        label="Or choose a folder of resumes"
+        hint="Adds every PDF, DOCX and TXT file in it"
+        (files)="onResumes($event)"
+      />
+      @if (resumes().length) {
+        <div class="row small resume-head">
+          <strong>{{ resumes().length }} resume{{ resumes().length === 1 ? '' : 's' }} added</strong>
+          <span class="muted">{{ formatBytes(resumesSize()) }}</span>
+          <span class="spacer"></span>
+          <button mat-button type="button" (click)="setResumes([])">Clear all</button>
+        </div>
+        <ul class="resume-list" aria-live="polite">
+          @for (f of resumes(); track f) {
+            <li class="file-chip fade-in">
+              <mat-icon>description</mat-icon>
+              <span class="name">{{ f.name }}</span>
+              <span class="muted small">{{ formatBytes(f.size) }}</span>
+              <button mat-icon-button (click)="removeResume(f)" [attr.aria-label]="'Remove ' + f.name"><mat-icon>close</mat-icon></button>
+            </li>
+          }
+        </ul>
+      }
+
+      <h2>3. Model</h2>
+      @if (modelsError(); as msg) {
+        <div class="alert error" role="alert">
+          <mat-icon>cloud_off</mat-icon>
+          <div>
+            {{ msg }}
+            <div><button mat-button (click)="loadModels()">Retry</button></div>
+          </div>
+        </div>
+      } @else if (!models()) {
+        <div class="row muted small"><mat-spinner diameter="18" /> Loading installed models…</div>
+      } @else if (models()!.models.length === 0) {
+        <div class="alert" role="alert">
+          <mat-icon>info</mat-icon>
+          @if (models()!.provider === 'ollama') {
+            <div>No models installed. Run <code>ollama pull {{ models()!.default_model }}</code>, then retry.</div>
+          } @else {
+            <div>No models available from the {{ models()!.provider }} provider. Check the backend LLM settings, then retry.</div>
+          }
+        </div>
+      } @else {
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Model ({{ models()!.provider }})</mat-label>
+          <mat-select [value]="selectedModel()" (valueChange)="selectedModel.set($event)">
+            @for (m of models()!.models; track m.name) {
+              <mat-option [value]="m.name">
+                {{ m.name }}
+                <span class="muted small">
+                  {{ m.parameter_size }} {{ formatBytes(m.size_bytes) }}
+                  @if (m.name === models()!.default_model) { · default }
+                </span>
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+
+      <div class="actions">
+        <button mat-flat-button class="go" [disabled]="!canScore()" (click)="score()">
+          @if (scoring()) {
+            <mat-spinner diameter="18" /> Uploading resumes…
+          } @else if (resumes().length) {
+            Score {{ resumes().length }} resume{{ resumes().length === 1 ? '' : 's' }}
+          } @else {
+            Add resumes to score
+          }
+        </button>
+        <!-- Rubric step disabled: "Edit rubric first" / "Generate rubric" buttons.
+        <button mat-stroked-button class="go" [disabled]="!canGenerate()" (click)="generate()">
+          @if (generating()) {
+            <mat-spinner diameter="18" /> Generating rubric…
+          } @else {
+            Edit rubric first
+          }
+        </button>
+        -->
+      </div>
+      @if (generating()) {
+        <p class="muted small" aria-live="polite">On a CPU-only machine this usually takes about a minute.</p>
+      } @else if (resumes().length && !scoring()) {
+        @if (usingDefaults()) {
+          <p class="muted small">Every resume is scored against the default criteria, then ranked by weighted score.</p>
+        } @else {
+          <p class="muted small">The rubric is built from the job description, then every resume is scored against it.</p>
+        }
+      }
+      @if (error(); as msg) {
+        <div class="alert error" role="alert"><mat-icon>error</mat-icon><div>{{ msg }}</div></div>
+      }
+    </section>
+
+    <section class="panel">
+      <h2>How it works</h2>
+      <ol class="how">
+        <li><strong>Rubric.</strong> The model reads the job description and proposes weighted criteria. You review and edit them, including which ones are must-haves.</li>
+        <li><strong>Scoring.</strong> Each resume is scored 0 to 10 on every criterion, with a quote from the resume as evidence.</li>
+        <li><strong>Verification.</strong> Every quote is checked against the resume. Quotes that can't be found are flagged <span class="chip bad">Unverified</span>, and that score's confidence goes down.</li>
+        <li><strong>Your decision.</strong> Candidates are ranked by weighted score, with missing must-haves flagged. You compare, add notes, and shortlist or reject.</li>
+      </ol>
+
+      <div class="answer">
+        <h3>Fairness</h3>
+        <p class="muted">
+          The model is told to ignore name, gender, age, photo, nationality and marital status. Turn on
+          <strong>Blind review</strong> (top right) to also hide names and filenames from yourself while reviewing.
+        </p>
+      </div>
+
+      <!-- Rubric step disabled: link back to the rubric editor.
+      @if (store.rubric()) {
+        <p class="small">
+          You have a rubric in progress{{ store.rubric()!.job_title ? ' for ' + store.rubric()!.job_title : '' }}.
+          <a routerLink="/rubric">Continue editing it</a>
+        </p>
+      }
+      -->
+    </section>
+  </div>
+</div>

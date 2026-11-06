@@ -1,0 +1,117 @@
+<div class="page">
+  <div class="row">
+    <a mat-button [routerLink]="['/jobs', jobId()]"><mat-icon>arrow_back</mat-icon> All candidates</a>
+  </div>
+
+  @if (job.error()) {
+    <div class="alert error" role="alert"><mat-icon>error</mat-icon><div>{{ apiErrorMessage(job.error()) }}</div></div>
+  } @else if (job.isLoading() && !job.hasValue()) {
+    <div class="row muted"><mat-spinner diameter="20" /> Loading…</div>
+  } @else if (candidates().length < 2) {
+    <div class="panel empty">
+      Select 2 or 3 scored candidates on the results page to compare them.
+      <div><a mat-flat-button [routerLink]="['/jobs', jobId()]">Back to results</a></div>
+    </div>
+  } @else {
+    <div class="page-head">
+      <div>
+        <h1>Side-by-side comparison</h1>
+        <p>The highest score on each criterion is highlighted. Hover a score to see its evidence quote.</p>
+      </div>
+    </div>
+
+    <section class="panel flush">
+      <div class="scroll-x">
+        <table class="cmp" [style.--cols]="candidates().length">
+          <thead>
+            <tr>
+              <th scope="col" class="crit-col">Criterion</th>
+              @for (c of candidates(); track c.id) {
+                <th scope="col">
+                  <a [routerLink]="['/jobs', jobId(), 'candidates', c.id]" class="cand">{{ store.displayName(c) }}</a>
+                  <div class="muted small">Rank #{{ c.rank }}</div>
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="total">
+              <th scope="row">Total score</th>
+              @for (c of candidates(); track c.id) {
+                <td [class.best]="c.total_score === bestTotal()">
+                  <span class="big">{{ c.total_score | number: '1.0-1' }}</span>
+                </td>
+              }
+            </tr>
+            <tr>
+              <th scope="row">Must-haves</th>
+              @for (c of candidates(); track c.id) {
+                <td>
+                  @if (c.must_have_ok) {
+                    <span class="chip ok"><mat-icon>check</mat-icon> All met</span>
+                  } @else {
+                    <span class="chip bad">Missing: {{ c.must_have_missing.join(', ') }}</span>
+                  }
+                </td>
+              }
+            </tr>
+            <tr>
+              <th scope="row">Confidence</th>
+              @for (c of candidates(); track c.id) {
+                <td>{{ c.confidence_label }} ({{ c.confidence | number: '1.0-2' }})</td>
+              }
+            </tr>
+
+            @for (r of rows(); track r.criterion) {
+              <tr>
+                <th scope="row">
+                  {{ r.criterion }}
+                  <div class="chips">
+                    <span class="chip plain">weight {{ r.weight }}</span>
+                    @if (r.mustHave) { <span class="chip warn">must</span> }
+                  </div>
+                </th>
+                @for (cell of r.cells; track $index) {
+                  <td [class.best]="cell && cell.score === r.best && r.best > 0">
+                    @if (cell) {
+                      <div class="score" [matTooltip]="cell.evidence_status === 'not_found' ? cell.reasoning : '“' + cell.evidence + '”'">
+                        <div class="bar"><div class="fill" [style.width.%]="cell.score * 10"></div></div>
+                        <span class="num">{{ cell.score }}</span>
+                      </div>
+                      <app-evidence-chip [status]="cell.evidence_status" [match]="cell.evidence_match" />
+                    } @else {
+                      <span class="muted">–</span>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+
+            <tr>
+              <th scope="row">Strengths</th>
+              @for (c of candidates(); track c.id) {
+                <td><ul class="list">@for (s of c.strengths; track s) { <li>{{ s }}</li> }</ul></td>
+              }
+            </tr>
+            <tr>
+              <th scope="row">Gaps</th>
+              @for (c of candidates(); track c.id) {
+                <td><ul class="list">@for (g of c.gaps; track g) { <li>{{ g }}</li> }</ul></td>
+              }
+            </tr>
+            <tr>
+              <th scope="row">Decision</th>
+              @for (c of candidates(); track c.id) {
+                <td>
+                  <span class="chip" [class.ok]="c.decision === 'shortlisted'" [class.bad]="c.decision === 'rejected'" [class.plain]="c.decision === 'pending'">
+                    {{ c.decision === 'pending' ? 'undecided' : c.decision }}
+                  </span>
+                </td>
+              }
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>

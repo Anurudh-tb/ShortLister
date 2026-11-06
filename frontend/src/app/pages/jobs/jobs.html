@@ -1,0 +1,43 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Scoring jobs</h1>
+      <p>Open a past shortlist, or permanently delete a job and every candidate's data.</p>
+    </div>
+    <div class="row">
+      <button mat-button (click)="jobs.reload()"><mat-icon>refresh</mat-icon> Refresh</button>
+      <a mat-flat-button routerLink="/setup"><mat-icon>add</mat-icon> New shortlist</a>
+    </div>
+  </div>
+
+  @if (jobs.error()) {
+    <div class="alert error" role="alert"><mat-icon>error</mat-icon><div>{{ apiErrorMessage(jobs.error()) }}</div></div>
+  } @else if (jobs.isLoading() && !jobs.hasValue()) {
+    <div class="row muted"><mat-spinner diameter="20" /> Loading jobs…</div>
+  } @else if (!jobs.value()?.length) {
+    <div class="panel empty">
+      No jobs yet.
+      <div><a mat-flat-button routerLink="/setup">Start your first shortlist</a></div>
+    </div>
+  } @else {
+    <ul class="jobs">
+      @for (j of jobs.value(); track j.job_id) {
+        <li class="panel fade-in">
+          <a class="main" [routerLink]="['/jobs', j.job_id]">
+            <div class="title">{{ j.job_title || 'Untitled role' }}</div>
+            <div class="muted small">{{ j.created_at | date: 'medium' }} · {{ j.model }} · {{ j.progress.total }} resumes</div>
+            @if (isActive(j)) {
+              <mat-progress-bar mode="determinate" [value]="j.progress.percent" />
+            }
+          </a>
+          <span class="chip" [class.ok]="j.status === 'completed'" [class.bad]="j.status === 'failed'" [class.warn]="isActive(j)">
+            {{ JOB_STATE_LABEL[j.status] }}
+          </span>
+          <button mat-button class="danger" (click)="remove(j)" [attr.aria-label]="'Delete job ' + (j.job_title || '')">
+            <mat-icon>delete</mat-icon> {{ confirming() === j.job_id ? 'Confirm' : 'Delete' }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</div>
