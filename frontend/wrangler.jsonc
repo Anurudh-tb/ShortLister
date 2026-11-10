@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "shortlister",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist/frontend/browser",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // /api/* must reach the Worker code instead of the SPA fallback
+    "run_worker_first": ["/api/*"]
+  },
+  "vars": {
+    // Quick-tunnel URL; it changes every time cloudflared restarts
+    "BACKEND_URL": "https://essence-receivers-comic-microwave.trycloudflare.com"
+  }
+}
