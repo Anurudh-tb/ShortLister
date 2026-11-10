@@ -32,10 +32,6 @@ class Settings(BaseSettings):
     must_have_min_score: int = Field(default=5, ge=1, le=10)
     max_resumes_per_job: int = Field(default=50, ge=1)
 
-    # Used when resumes are scored without a JD (paths are relative to backend/). See services/defaults.py.
-    default_jd_file: str = "defaults/default_jd.txt"
-    default_criteria_file: str = "defaults/default_criteria.json"
-
     max_file_mb: float = Field(default=10.0, gt=0)
     ocr_enabled: bool = False
 

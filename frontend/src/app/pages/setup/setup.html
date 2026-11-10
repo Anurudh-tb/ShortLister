@@ -38,46 +38,6 @@
         </div>
       }
 
-      @if (defaults(); as d) {
-        <details class="defaults" [class.active]="usingDefaults()">
-          <summary>
-            <mat-icon>{{ usingDefaults() ? 'task_alt' : 'info' }}</mat-icon>
-            <span>
-              @if (usingDefaults()) {
-                No job description added: resumes will be scored against the default
-                <strong>{{ d.criteria.job_title || 'job description' }}</strong> criteria.
-              } @else {
-                Default JD and criteria ({{ d.criteria.job_title || 'default' }}) are used when this is left empty.
-              }
-            </span>
-          </summary>
-          <h3>Default criteria</h3>
-          <table class="criteria">
-            <thead>
-              <tr><th>Criterion</th><th>Weight</th><th>Must-have</th></tr>
-            </thead>
-            <tbody>
-              @for (c of d.criteria.criteria; track c.name) {
-                <tr>
-                  <td>
-                    <div>{{ c.name }}</div>
-                    @if (c.description) {
-                      <div class="muted small">{{ c.description }}</div>
-                    }
-                  </td>
-                  <td>{{ c.weight }}%</td>
-                  <td>{{ c.must_have ? 'Yes' : '' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-          <h3>Default job description</h3>
-          <pre class="default-jd">{{ d.jd }}</pre>
-        </details>
-      } @else if (config() && usingDefaults()) {
-        <p class="muted small">Add a job description: no default JD is configured on the server.</p>
-      }
-
       <h2>2. Resumes</h2>
       <app-drop-zone
         [multiple]="true"
@@ -173,10 +133,10 @@
       @if (generating()) {
         <p class="muted small" aria-live="polite">On a CPU-only machine this usually takes about a minute.</p>
       } @else if (resumes().length && !scoring()) {
-        @if (usingDefaults()) {
-          <p class="muted small">Every resume is scored against the default criteria, then ranked by weighted score.</p>
-        } @else {
+        @if (hasJd()) {
           <p class="muted small">The rubric is built from the job description, then every resume is scored against it.</p>
+        } @else {
+          <p class="muted small">Add a job description (at least 50 characters, or a file) to score resumes.</p>
         }
       }
       @if (error(); as msg) {

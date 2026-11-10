@@ -7,7 +7,6 @@ from app.config import Settings, get_settings
 from app.deps import get_job_manager
 from models.schemas import CandidateResult, CandidateReview, JobDetail, JobSummary, Rubric, ScoreJobCreated
 from routers.rubric import read_jd
-from services.defaults import DefaultsError, load_defaults
 from services.extraction import ExtractionError, extract_text
 from services.jobs import JobManager, UploadedResume
 
@@ -22,7 +21,6 @@ def _not_found(what: str) -> HTTPException:
 async def start_scoring(
     resumes: Annotated[list[UploadFile], File(description="Resume files (PDF, DOCX, TXT)")],
     rubric: Annotated[str | None, Form(description="Rubric JSON; if omitted it is generated from the JD")] = None,
-    # Without a rubric or a JD, resumes are scored against the default JD and criteria (backend/defaults/).
     jd_text: Annotated[str | None, Form()] = None,
     jd_file: Annotated[UploadFile | None, File()] = None,
     model: Annotated[str | None, Form()] = None,
@@ -37,13 +35,6 @@ async def start_scoring(
         except ValidationError as e:
             msg = "; ".join(err["msg"] for err in e.errors()[:5])
             raise HTTPException(422, detail={"code": "invalid_rubric", "detail": msg}) from e
-    elif jd_file is None and not (jd_text or "").strip():
-        try:
-            defaults = load_defaults(settings)
-        except DefaultsError as e:
-            raise HTTPException(422, detail={"code": "jd_missing",
-                                              "detail": f"No job description given and no usable default: {e}"}) from e
-        parsed_rubric, jd = defaults.rubric, defaults.jd_text
     else:
         jd = await read_jd(jd_text, jd_file, settings)
 

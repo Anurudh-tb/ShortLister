@@ -162,35 +162,8 @@ PY_DEV = ("Priya Backend\nSenior Python developer, 7 years of professional Pytho
           "Running containers and Kubernetes in production.")
 
 
-def test_score_without_jd_uses_default_jd_and_criteria(client_with: ClientFactory) -> None:
-    from app.config import get_settings
-    from services.defaults import load_defaults
-
-    defaults = load_defaults(get_settings())
-    client = client_with(MockProvider())
-
-    config = client.get("/api/config").json()
-    assert config["default_jd"] == defaults.jd_text
-    assert config["default_criteria"]["job_title"] == defaults.rubric.job_title
-    assert sum(c["weight"] for c in config["default_criteria"]["criteria"]) == 100
-
-    r = client.post("/api/score", files=files(("weak.txt", WEAK.encode()), ("dev.txt", PY_DEV.encode())))
-    assert r.status_code == 202
-    job = wait_for(client, r.json()["job_id"])
-    assert job["status"] == "completed"
-    assert job["job_title"] == defaults.rubric.job_title
-    assert [c["name"] for c in job["rubric"]["criteria"]] == [c.name for c in defaults.rubric.criteria]
-    ranked = sorted(job["candidates"], key=lambda c: c["rank"])
-    assert ranked[0]["filename"] == "dev.txt" and ranked[0]["total_score"] > ranked[1]["total_score"]
-
-
-def test_score_without_jd_reports_broken_defaults(client_with: ClientFactory, monkeypatch: Any, tmp_path: Any) -> None:
-    from app.main import settings
-
-    bad = tmp_path / "criteria.json"
-    bad.write_text(json.dumps({"criteria": [{"name": "Only", "weight": 50}]}))  # weights don't add up to 100
-    monkeypatch.setattr(settings, "default_criteria_file", str(bad))
+def test_score_without_jd_is_rejected(client_with: ClientFactory) -> None:
     client = client_with(MockProvider())
     r = client.post("/api/score", files=files(("dev.txt", PY_DEV.encode())))
-    assert r.status_code == 422 and "criteria.json" in r.json()["detail"]["detail"]
-    assert client.get("/api/config").json()["default_criteria"] is None
+    assert r.status_code == 422 and r.json()["detail"]["code"] == "jd_missing"
+    assert "default_jd" not in client.get("/api/config").json()

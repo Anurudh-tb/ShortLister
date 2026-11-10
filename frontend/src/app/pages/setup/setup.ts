@@ -9,7 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { Router /* , RouterLink */ } from '@angular/router'; // RouterLink only used by the disabled rubric link
 
-import { ModelsResponse, PublicConfig } from '../../core/api.models';
+import { ModelsResponse } from '../../core/api.models';
 import { ApiService, apiErrorMessage } from '../../core/api.service';
 import { WorkflowStore } from '../../core/workflow.store';
 import { DropZone } from '../../shared/drop-zone';
@@ -37,13 +37,6 @@ export class SetupPage {
   protected readonly jdText = this.store.jdText;
   protected readonly jdFile = this.store.jdFile;
 
-  /** Default JD and criteria from the backend, used when no JD is given. */
-  protected readonly config = signal<PublicConfig | null>(null);
-  protected readonly defaults = computed(() => {
-    const c = this.config();
-    return c?.default_jd && c.default_criteria ? { jd: c.default_jd, criteria: c.default_criteria } : null;
-  });
-
   protected readonly models = signal<ModelsResponse | null>(null);
   protected readonly modelsError = signal<string | null>(null);
   protected readonly selectedModel = signal<string | null>(this.store.model());
@@ -57,25 +50,15 @@ export class SetupPage {
 
   /** ~4 chars per token, same heuristic as the backend. */
   protected readonly approxTokens = computed(() => Math.round(this.jdText().length / 4));
-  private readonly hasJd = computed(() => !!this.jdFile() || this.jdText().trim().length >= 50);
-  /** No JD file and no typed text: the backend scores against the default JD and criteria. */
-  protected readonly usingDefaults = computed(() => !this.jdFile() && !this.jdText().trim());
+  protected readonly hasJd = computed(() => !!this.jdFile() || this.jdText().trim().length >= 50);
   protected readonly busy = computed(() => this.generating() || this.scoring());
   protected readonly canGenerate = computed(() => !this.busy() && !!this.selectedModel() && this.hasJd());
   protected readonly canScore = computed(
-    () =>
-      !this.busy() &&
-      !!this.selectedModel() &&
-      this.resumes().length > 0 &&
-      (this.hasJd() || (this.usingDefaults() && !!this.defaults())),
+    () => !this.busy() && !!this.selectedModel() && this.resumes().length > 0 && this.hasJd(),
   );
 
   constructor() {
     this.loadModels();
-    this.api
-      .getConfig()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ next: (c) => this.config.set(c), error: () => this.config.set(null) });
   }
 
   protected loadModels(): void {
@@ -159,8 +142,7 @@ export class SetupPage {
   }
 
   /**
-   * One step: the backend builds the rubric from the JD, then scores every resume against it. With no
-   * JD, nothing JD-related is sent and the backend uses its default JD and criteria.
+   * One step: the backend builds the rubric from the JD, then scores every resume against it.
    */
   protected score(): void {
     const model = this.selectedModel();

@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends
 from app.config import Settings, get_settings
 from app.deps import get_provider
 from models.schemas import ModelsResponse, PublicConfig
-from services.defaults import DefaultsError, load_defaults
 from services.llm.base import LLMProvider
 
 router = APIRouter(prefix="/api", tags=["llm"])
@@ -20,13 +19,7 @@ async def list_models(
 
 @router.get("/config", response_model=PublicConfig)
 async def public_config(settings: Settings = Depends(get_settings)) -> PublicConfig:
-    try:
-        defaults = load_defaults(settings)
-    except DefaultsError:
-        defaults = None
     return PublicConfig(
-        default_jd=defaults.jd_text if defaults else None,
-        default_criteria=defaults.rubric if defaults else None,
         provider=settings.effective_provider,
         default_model=settings.active_model,
         num_ctx=settings.num_ctx,

@@ -187,9 +187,6 @@ class PublicConfig(BaseModel):
     must_have_min_score: int
     persist_resume_text: bool
     ocr_enabled: bool
-    # Used when resumes are scored without a JD; None if the default files are missing or invalid.
-    default_jd: str | None = None
-    default_criteria: Rubric | None = None
 
 
 class ModelsResponse(BaseModel):

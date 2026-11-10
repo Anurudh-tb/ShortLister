@@ -36,8 +36,6 @@ export interface PublicConfig {
   persist_resume_text: boolean;
   ocr_enabled: boolean;
   /** Used when resumes are scored without a JD; null if the backend's default files are missing or invalid. */
-  default_jd: string | null;
-  default_criteria: Rubric | null;
 }
 
 export interface ModelsResponse {
