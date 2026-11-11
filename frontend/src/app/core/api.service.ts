@@ -57,13 +57,14 @@ export class ApiService {
    */
   startScoring(
     resumes: File[],
-    input: { rubric?: Rubric; jdText?: string; jdFile?: File; model?: string },
+    input: { rubric?: Rubric; jdText?: string; jdFile?: File; model?: string; priority?: string },
   ): Observable<HttpEvent<ScoreJobCreated>> {
     const form = new FormData();
     if (input.rubric) form.append('rubric', JSON.stringify(input.rubric));
     if (input.jdText) form.append('jd_text', input.jdText);
     if (input.jdFile) form.append('jd_file', input.jdFile, input.jdFile.name);
     if (input.model) form.append('model', input.model);
+    if (input.priority?.trim()) form.append('priority', input.priority.trim());
     for (const f of resumes) form.append('resumes', f, f.name);
     return this.http.post<ScoreJobCreated>(`${this.base}/score`, form, { reportProgress: true, observe: 'events' });
   }

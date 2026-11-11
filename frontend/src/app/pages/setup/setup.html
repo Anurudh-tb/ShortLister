@@ -23,16 +23,19 @@
         </div>
       }
 
-      <label class="sr-only" for="jd">{{ jdFile() ? 'Extra criteria' : 'Job description text' }}</label>
+      <label class="sr-only" for="jd">{{ jdFile() ? 'Priority for sorting' : 'Job description text' }}</label>
       <textarea
         id="jd"
         rows="11"
         [ngModel]="jdText()"
         (ngModelChange)="onTextInput($event)"
-        [placeholder]="jdFile() ? 'Optional: add extra criteria, e.g. Must have 3+ years of React. They are combined with the uploaded file.' : 'Or paste the job description here…'"
+        [placeholder]="jdFile() ? 'Optional: the skill or expertise to prioritise, e.g. 5+ years of React with AWS Lambda. It counts for ' + priorityWeight() + '% of each score.' : 'Or paste the job description here…'"
       ></textarea>
       @if (jdText()) {
         <div class="row small muted">
+          @if (jdFile()) {
+            <span>Priority: {{ priorityWeight() }}% of each score; the job description's criteria share the other {{ 100 - priorityWeight() }}%.</span>
+          }
           <span class="spacer"></span>
           <span>{{ jdText().length }} characters · ~{{ approxTokens() }} tokens</span>
         </div>
@@ -43,15 +46,7 @@
         [multiple]="true"
         accept=".pdf,.docx,.txt"
         label="Choose resumes"
-        hint="Several files · PDF, DOCX or TXT"
-        (files)="onResumes($event)"
-      />
-      <app-drop-zone
-        class="folder-pick"
-        [folder]="true"
-        [multiple]="true"
-        label="Or choose a folder of resumes"
-        hint="Adds every PDF, DOCX and TXT file in it"
+        hint="Select several files, or drop files or a whole folder · PDF, DOCX or TXT"
         (files)="onResumes($event)"
       />
       @if (resumes().length) {

@@ -7,6 +7,7 @@ from app.config import Settings, get_settings
 from app.deps import get_job_manager
 from models.schemas import CandidateResult, CandidateReview, JobDetail, JobSummary, Rubric, ScoreJobCreated
 from routers.rubric import read_jd
+from services.rubric import PRIORITY_MAX_CHARS
 from services.extraction import ExtractionError, extract_text
 from services.jobs import JobManager, UploadedResume
 
@@ -23,6 +24,8 @@ async def start_scoring(
     rubric: Annotated[str | None, Form(description="Rubric JSON; if omitted it is generated from the JD")] = None,
     jd_text: Annotated[str | None, Form()] = None,
     jd_file: Annotated[UploadFile | None, File()] = None,
+    # Recruiter's own skill/expertise prompt; scored as one extra criterion worth PRIORITY_WEIGHT % of the total.
+    priority: Annotated[str | None, Form(max_length=PRIORITY_MAX_CHARS)] = None,
     model: Annotated[str | None, Form()] = None,
     settings: Settings = Depends(get_settings),
     manager: JobManager = Depends(get_job_manager),
@@ -56,7 +59,8 @@ async def start_scoring(
         except ExtractionError as e:
             uploaded.append(UploadedResume(name, error=str(e)))
 
-    job = manager.create_job(model=model or settings.active_model, rubric=parsed_rubric, jd_text=jd, resumes=uploaded)
+    job = manager.create_job(model=model or settings.active_model, rubric=parsed_rubric, jd_text=jd,
+                             priority=(priority or "").strip() or None, resumes=uploaded)
     return ScoreJobCreated(job_id=job.job_id, status=job.status, candidates=job.candidates)
 
 

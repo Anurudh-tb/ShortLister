@@ -187,6 +187,7 @@ class PublicConfig(BaseModel):
     must_have_min_score: int
     persist_resume_text: bool
     ocr_enabled: bool
+    priority_weight: int
 
 
 class ModelsResponse(BaseModel):

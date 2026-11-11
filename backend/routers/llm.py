@@ -28,4 +28,5 @@ async def public_config(settings: Settings = Depends(get_settings)) -> PublicCon
         must_have_min_score=settings.must_have_min_score,
         persist_resume_text=settings.persist_resume_text,
         ocr_enabled=settings.ocr_enabled,
+        priority_weight=settings.priority_weight,
     )

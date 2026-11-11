@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from services.llm.base import LLMProvider
+from services.llm.base import LLMProvider, LLMTimeoutError
 from services.llm.mock import MockProvider
 from tests.conftest import ScriptedProvider, make_pdf
 
@@ -167,3 +167,34 @@ def test_score_without_jd_is_rejected(client_with: ClientFactory) -> None:
     r = client.post("/api/score", files=files(("dev.txt", PY_DEV.encode())))
     assert r.status_code == 422 and r.json()["detail"]["code"] == "jd_missing"
     assert "default_jd" not in client.get("/api/config").json()
+
+
+class _SlowOnWeakProvider(MockProvider):
+    async def chat_json(self, messages: list[Any], json_schema: dict[str, Any], **kw: Any) -> str:
+        if any("Sam Weak" in m.content for m in messages):
+            raise LLMTimeoutError("Ollama took longer than 900s. Try a smaller model or raise LLM_TIMEOUT_S.")
+        return await super().chat_json(messages, json_schema, **kw)
+
+
+def test_timeout_fails_only_that_resume(client_with: ClientFactory) -> None:
+    client = client_with(_SlowOnWeakProvider())
+    r = client.post("/api/score", data={"rubric": json.dumps(RUBRIC)},
+                    files=files(("weak.txt", WEAK.encode()), ("strong.txt", STRONG.encode())))
+    job = wait_for(client, r.json()["job_id"])
+    assert job["status"] == "completed"
+    by_name = {c["filename"]: c for c in job["candidates"]}
+    assert by_name["weak.txt"]["status"] == "error" and "900s" in by_name["weak.txt"]["error"]
+    assert by_name["strong.txt"]["status"] == "done"
+
+
+def test_priority_prompt_is_a_25_percent_criterion(client_with: ClientFactory) -> None:
+    client = client_with(MockProvider())
+    r = client.post("/api/score", data={"rubric": json.dumps(RUBRIC), "priority": "Operated Kubernetes EKS clusters"},
+                    files=files(("strong.txt", STRONG.encode())))
+    assert r.status_code == 202
+    job = wait_for(client, r.json()["job_id"])
+    weights = {c["name"]: c["weight"] for c in job["rubric"]["criteria"]}
+    assert weights == {"Python": 45, "Kubernetes": 30, "Recruiter priority": 25}
+    assert job["status"] == "completed"
+    crit = {c["criterion"]: c for c in job["candidates"][0]["criteria"]}
+    assert crit["Recruiter priority"]["weight"] == 25

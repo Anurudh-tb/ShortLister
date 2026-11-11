@@ -40,6 +40,27 @@ def draft_to_rubric(draft: RubricDraft) -> Rubric:
     return Rubric(job_title=draft.job_title, criteria=criteria)
 
 
+PRIORITY_NAME = "Recruiter priority"
+PRIORITY_MAX_CHARS = 1000
+
+
+def apply_priority(rubric: Rubric, priority: str, weight: int) -> Rubric:
+    """Add the recruiter's own skill/expertise prompt as one criterion worth `weight`% of the total.
+
+    The rubric's other criteria keep their relative weights, scaled to share the remaining points.
+    """
+    text = priority.strip()[:PRIORITY_MAX_CHARS]
+    if not text:
+        return rubric
+    others = [c for c in rubric.criteria if c.name.casefold() != PRIORITY_NAME.casefold()]
+    if len(others) >= 20:
+        raise ValueError("The rubric already has 20 criteria; there is no room for the priority criterion")
+    scaled = normalize_weights([c.weight for c in others], WEIGHT_TOTAL - weight)
+    criteria = [c.model_copy(update={"weight": w}) for c, w in zip(others, scaled, strict=True)]
+    criteria.append(Criterion(name=PRIORITY_NAME, description=text, weight=weight, must_have=False))
+    return Rubric(job_title=rubric.job_title, criteria=criteria)
+
+
 async def generate_rubric(
     provider: LLMProvider, settings: Settings, jd_text: str, model: str
 ) -> tuple[Rubric, list[str]]:

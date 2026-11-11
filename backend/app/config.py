@@ -23,13 +23,15 @@ class Settings(BaseSettings):
     # server-side but is only supported by some models.
     online_json_mode: Literal["json_object", "json_schema"] = "json_object"
     num_ctx: int = Field(default=8192, ge=1024)
-    llm_timeout_s: float = Field(default=300.0, gt=0)
+    llm_timeout_s: float = Field(default=900.0, gt=0)
     llm_max_retries: int = Field(default=2, ge=0, le=5)
     # Tokens reserved for the model's JSON answer when checking context fit.
     output_token_reserve: int = Field(default=1500, ge=256)
 
     # A must-have criterion counts as met only if its score is at least this (0-10).
     must_have_min_score: int = Field(default=5, ge=1, le=10)
+    # Share of the total score (out of 100) given to the recruiter's priority prompt, when one is entered.
+    priority_weight: int = Field(default=25, ge=1, le=90)
     max_resumes_per_job: int = Field(default=50, ge=1)
 
     max_file_mb: float = Field(default=10.0, gt=0)

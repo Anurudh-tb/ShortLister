@@ -24,7 +24,7 @@ from models.schemas import (
 from services.cache import LLMCache
 from services.llm.base import LLMError, LLMProvider, LLMUnavailableError, ModelNotFoundError
 from services.ranking import rank_candidates
-from services.rubric import generate_rubric
+from services.rubric import apply_priority, generate_rubric
 from services.scoring import ResumeInput, score_resume
 
 logger = logging.getLogger(__name__)
@@ -79,7 +79,8 @@ class JobManager:
     # ---------- commands ----------
 
     def create_job(
-        self, *, model: str, rubric: Rubric | None, jd_text: str | None, resumes: list[UploadedResume]
+        self, *, model: str, rubric: Rubric | None, jd_text: str | None, resumes: list[UploadedResume],
+        priority: str | None = None,
     ) -> JobDetail:
         if rubric is None and not jd_text:
             raise ValueError("A rubric or JD text is required")
@@ -106,7 +107,7 @@ class JobManager:
                     inputs.append(ResumeInput(cid, r.filename, r.text, r.ocr_used, r.warnings or []))
             s.add(job)
 
-        task = asyncio.create_task(self._run(job_id, model, rubric, jd_text, inputs), name=f"job-{job_id}")
+        task = asyncio.create_task(self._run(job_id, model, rubric, jd_text, inputs, priority), name=f"job-{job_id}")
         self._tasks[job_id] = task
         task.add_done_callback(lambda _t: self._tasks.pop(job_id, None))
         detail = self.get_job(job_id)
@@ -156,7 +157,8 @@ class JobManager:
     # ---------- worker ----------
 
     async def _run(
-        self, job_id: str, model: str, rubric: Rubric | None, jd_text: str | None, inputs: list[ResumeInput]
+        self, job_id: str, model: str, rubric: Rubric | None, jd_text: str | None, inputs: list[ResumeInput],
+        priority: str | None = None,
     ) -> None:
         try:
             if rubric is None:
@@ -167,6 +169,10 @@ class JobManager:
                         rubric, _ = await generate_rubric(self._provider, self._settings, jd_text or "", model)
                     self._cache.put_rubric(jd_text or "", model, rubric)
                 self._update_job(job_id, rubric_json=rubric.model_dump_json(), job_title=_clip(rubric.job_title, 200))
+            if priority:
+                # Applied after the cache so the JD's rubric is reused; the score cache keys on the final rubric.
+                rubric = apply_priority(rubric, priority, self._settings.priority_weight)
+                self._update_job(job_id, rubric_json=rubric.model_dump_json())
 
             self._update_job(job_id, status="running")
             for resume in inputs:

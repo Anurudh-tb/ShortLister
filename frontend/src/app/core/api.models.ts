@@ -27,6 +27,7 @@ export interface ModelInfo {
 }
 
 export interface PublicConfig {
+  priority_weight: number;
   provider: string;
   default_model: string;
   num_ctx: number;

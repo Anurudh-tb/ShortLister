@@ -9,7 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { Router /* , RouterLink */ } from '@angular/router'; // RouterLink only used by the disabled rubric link
 
-import { ModelsResponse } from '../../core/api.models';
+import { ModelsResponse, PublicConfig } from '../../core/api.models';
 import { ApiService, apiErrorMessage } from '../../core/api.service';
 import { WorkflowStore } from '../../core/workflow.store';
 import { DropZone } from '../../shared/drop-zone';
@@ -36,6 +36,8 @@ export class SetupPage {
   // Kept in the store so the JD survives leaving and returning to this page.
   protected readonly jdText = this.store.jdText;
   protected readonly jdFile = this.store.jdFile;
+  /** With a JD file, the typed text is the priority prompt; this is its share of the score (backend config). */
+  protected readonly priorityWeight = signal(25);
 
   protected readonly models = signal<ModelsResponse | null>(null);
   protected readonly modelsError = signal<string | null>(null);
@@ -59,6 +61,10 @@ export class SetupPage {
 
   constructor() {
     this.loadModels();
+    this.api
+      .getConfig()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (c: PublicConfig) => this.priorityWeight.set(c.priority_weight), error: () => undefined });
   }
 
   protected loadModels(): void {
@@ -114,7 +120,7 @@ export class SetupPage {
   }
 
   protected onTextInput(value: string): void {
-    // With an uploaded JD, typed text is extra criteria sent alongside the file, so the file is kept.
+    // With an uploaded JD, typed text is the priority prompt sent alongside the file, so the file is kept.
     this.jdText.set(value);
   }
 
@@ -150,7 +156,13 @@ export class SetupPage {
     this.scoring.set(true);
     this.error.set(null);
     this.api
-      .startScoring(this.resumes(), { jdFile: this.jdFile() ?? undefined, jdText: this.jdText(), model })
+      .startScoring(this.resumes(), {
+        jdFile: this.jdFile() ?? undefined,
+        // With an uploaded JD the text box holds the recruiter's priority prompt, not more JD text.
+        jdText: this.jdFile() ? undefined : this.jdText(),
+        priority: this.jdFile() ? this.jdText() : undefined,
+        model,
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (event) => {

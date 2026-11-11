@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from app.config import Settings
 from models.schemas import Criterion, Rubric, RubricDraft
 from services.llm.base import LLMOutputError
-from services.rubric import draft_to_rubric, generate_rubric, normalize_weights
+from services.rubric import PRIORITY_NAME, apply_priority, draft_to_rubric, generate_rubric, normalize_weights
 from tests.conftest import ScriptedProvider
 
 SETTINGS = Settings(_env_file=None, llm_provider="mock", llm_max_retries=1)
@@ -107,3 +107,18 @@ def test_context_warning_for_huge_jd() -> None:
     from services.tokens import context_warning
     assert context_warning("JD", "x" * 100, num_ctx=8192, output_reserve=1500) is None
     assert "NUM_CTX" in (context_warning("JD", "x" * 40000, num_ctx=8192, output_reserve=1500) or "")
+
+
+def test_apply_priority_takes_fixed_share_and_keeps_proportions() -> None:
+    rubric = Rubric(criteria=[
+        Criterion(name="Python", weight=60, must_have=True),
+        Criterion(name="Kubernetes", weight=40),
+    ])
+    out = apply_priority(rubric, "  5+ years of React and AWS Lambda  ", 25)
+    assert [(c.name, c.weight) for c in out.criteria] == [("Python", 45), ("Kubernetes", 30), (PRIORITY_NAME, 25)]
+    assert out.criteria[-1].description == "5+ years of React and AWS Lambda"
+    assert out.criteria[0].must_have is True and out.criteria[-1].must_have is False
+    # Re-applying replaces the old priority instead of adding a second one.
+    again = apply_priority(out, "Go microservices", 25)
+    assert [c.name for c in again.criteria].count(PRIORITY_NAME) == 1 and sum(c.weight for c in again.criteria) == 100
+    assert apply_priority(rubric, "   ", 25) is rubric

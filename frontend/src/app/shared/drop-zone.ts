@@ -12,9 +12,7 @@ import { Component, input, output, signal } from '@angular/core';
       (drop)="onDrop($event)"
     >
       <!-- Static attributes so the OS file dialog always opens in the right mode. -->
-      @if (folder()) {
-        <input type="file" webkitdirectory multiple (change)="onPick($event)" />
-      } @else if (multiple()) {
+      @if (multiple()) {
         <input type="file" [accept]="accept()" multiple (change)="onPick($event)" />
       } @else {
         <input type="file" [accept]="accept()" (change)="onPick($event)" />
@@ -27,8 +25,6 @@ import { Component, input, output, signal } from '@angular/core';
 export class DropZone {
   readonly accept = input('.pdf,.docx,.txt');
   readonly multiple = input(false);
-  /** Pick a whole folder (all files inside it, including subfolders). */
-  readonly folder = input(false);
   readonly label = input('Choose a file');
   readonly hint = input('PDF, DOCX or TXT');
   readonly files = output<File[]>();
@@ -40,10 +36,19 @@ export class DropZone {
     this.over.set(true);
   }
 
-  protected onDrop(e: DragEvent): void {
+  protected async onDrop(e: DragEvent): Promise<void> {
     e.preventDefault();
     this.over.set(false);
-    const list = Array.from(e.dataTransfer?.files ?? []);
+    const dt = e.dataTransfer;
+    if (!dt) return;
+    // Entries must be read synchronously, before the drop event's data is released.
+    const entries = Array.from(dt.items ?? [])
+      .map((item) => item.webkitGetAsEntry?.())
+      .filter((entry): entry is FileSystemEntry => !!entry);
+    const list =
+      this.multiple() && entries.some((entry) => entry.isDirectory)
+        ? (await Promise.all(entries.map(readEntry))).flat() // a dropped folder adds every file inside it
+        : Array.from(dt.files);
     if (list.length) this.files.emit(this.multiple() ? list : list.slice(0, 1));
   }
 
@@ -53,4 +58,21 @@ export class DropZone {
     if (list.length) this.files.emit(list);
     el.value = ''; // allow picking the same file again
   }
+}
+
+/** All files under a dropped file or folder entry, including subfolders. */
+async function readEntry(entry: FileSystemEntry): Promise<File[]> {
+  if (entry.isFile) {
+    return new Promise((resolve) => (entry as FileSystemFileEntry).file((f) => resolve([f]), () => resolve([])));
+  }
+  if (!entry.isDirectory) return [];
+  const reader = (entry as FileSystemDirectoryEntry).createReader();
+  const children: FileSystemEntry[] = [];
+  // readEntries returns results in batches; keep reading until it returns an empty batch.
+  for (;;) {
+    const batch = await new Promise<FileSystemEntry[]>((resolve) => reader.readEntries(resolve, () => resolve([])));
+    if (!batch.length) break;
+    children.push(...batch);
+  }
+  return (await Promise.all(children.map(readEntry))).flat();
 }
