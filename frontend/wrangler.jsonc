@@ -10,8 +10,9 @@
     // /api/* must reach the Worker code instead of the SPA fallback
     "run_worker_first": ["/api/*"]
   },
-  "vars": {
-    // Quick-tunnel URL; it changes every time cloudflared restarts
-    "BACKEND_URL": "https://essence-receivers-comic-microwave.trycloudflare.com"
-  }
+  // Private link to the local FastAPI server: named tunnel "shortlister-backend" -> 127.0.0.1:8000.
+  // Keep `npx wrangler tunnel run 126061e5-be84-4738-ab74-3af66eb74d63` running on the backend machine.
+  "vpc_services": [
+    { "binding": "BACKEND", "service_id": "01a1c93d-d414-7bb2-a85e-d22984d06adf" }
+  ]
 }
