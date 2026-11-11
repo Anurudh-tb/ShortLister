@@ -26,6 +26,12 @@ class LLMUnavailableError(LLMError):
     code = "llm_unavailable"
 
 
+class LLMTimeoutError(LLMError):
+    """One request took longer than LLM_TIMEOUT_S. The provider is up, so a job skips just that item."""
+
+    code = "llm_timeout"
+
+
 class ModelNotFoundError(LLMError):
     code = "model_not_found"
 

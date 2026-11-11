@@ -9,6 +9,7 @@ from services.llm.base import (
     ChatMessage,
     LLMError,
     LLMProvider,
+    LLMTimeoutError,
     LLMUnavailableError,
     ModelNotFoundError,
 )
@@ -22,6 +23,7 @@ class OllamaProvider(LLMProvider):
     def __init__(self, host: str, timeout_s: float, default_num_ctx: int) -> None:
         self._host = host.rstrip("/")
         self._default_num_ctx = default_num_ctx
+        self._timeout_s = timeout_s
         self._client = httpx.AsyncClient(base_url=self._host, timeout=httpx.Timeout(timeout_s, connect=5.0))
 
     async def chat_json(
@@ -70,8 +72,8 @@ class OllamaProvider(LLMProvider):
                 f"Cannot reach Ollama at {self._host}. Is `ollama serve` running?"
             ) from e
         except httpx.TimeoutException as e:
-            raise LLMUnavailableError(
-                "Ollama request timed out. Try a smaller model or raise LLM_TIMEOUT_S."
+            raise LLMTimeoutError(
+                f"Ollama took longer than {self._timeout_s:.0f}s. Try a smaller model or raise LLM_TIMEOUT_S."
             ) from e
         if resp.status_code == 404 and model:
             raise ModelNotFoundError(f"Model '{model}' is not installed. Run: ollama pull {model}")

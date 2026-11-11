@@ -14,7 +14,7 @@ from models.db import Database
 from routers import auth, jobs, llm, rubric
 from services.extraction import ExtractionError, FileTooLargeError, UnsupportedFileTypeError
 from services.jobs import JobManager
-from services.llm.base import LLMError, LLMOutputError, LLMUnavailableError, ModelNotFoundError
+from services.llm.base import LLMError, LLMOutputError, LLMTimeoutError, LLMUnavailableError, ModelNotFoundError
 from services.llm.factory import build_provider
 from services.auth_tokens import TokenService
 from services.rate_limit import AuthRateLimiter, RateLimited
@@ -78,7 +78,7 @@ async def _rate_limited(_: Request, exc: RateLimited) -> JSONResponse:
 
 @app.exception_handler(LLMError)
 async def _llm_error(_: Request, exc: LLMError) -> JSONResponse:
-    status = {LLMUnavailableError: 503, ModelNotFoundError: 400, LLMOutputError: 502}.get(type(exc), 502)
+    status = {LLMUnavailableError: 503, LLMTimeoutError: 504, ModelNotFoundError: 400, LLMOutputError: 502}.get(type(exc), 502)
     return _error(status, exc.code, str(exc))
 
 

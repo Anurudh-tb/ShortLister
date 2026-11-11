@@ -15,6 +15,7 @@ from services.llm.base import (
     ChatMessage,
     LLMError,
     LLMProvider,
+    LLMTimeoutError,
     LLMUnavailableError,
     ModelNotFoundError,
 )
@@ -101,7 +102,7 @@ class OpenAICompatProvider(LLMProvider):
             except httpx.ConnectError as e:
                 raise LLMUnavailableError(f"Cannot reach the online LLM at {self._base_url}. Check your network.") from e
             except httpx.TimeoutException as e:
-                raise LLMUnavailableError("Online LLM request timed out. Raise LLM_TIMEOUT_S or retry.") from e
+                raise LLMTimeoutError("Online LLM request timed out. Raise LLM_TIMEOUT_S or retry.") from e
             if resp.status_code != 429 or attempt == _MAX_RATE_LIMIT_WAITS:
                 break
             wait = _retry_after_s(resp, default=2.0 * (attempt + 1))
