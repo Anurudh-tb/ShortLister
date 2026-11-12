@@ -85,6 +85,7 @@ export class ResultsPage {
     return {
       shortlisted: cs.filter((c) => c.decision === 'shortlisted').length,
       rejected: cs.filter((c) => c.decision === 'rejected').length,
+      pending: cs.filter((c) => c.decision === 'pending').length,
       mustHaveOk: cs.filter((c) => c.must_have_ok).length,
     };
   });

@@ -43,6 +43,19 @@ table {
 .decision {
   display: flex;
   align-items: center;
+  .decision-label {
+    min-width: 76px;
+    margin-left: 4px;
+    color: var(--muted);
+    &.ok {
+      color: var(--ok);
+      font-weight: 600;
+    }
+    &.bad {
+      color: var(--bad);
+      font-weight: 600;
+    }
+  }
   .on-ok {
     color: var(--ok);
     background: var(--ok-soft);

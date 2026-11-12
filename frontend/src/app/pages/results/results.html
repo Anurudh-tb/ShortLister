@@ -54,7 +54,7 @@
           hideSingleSelectionIndicator
         >
           <mat-button-toggle value="all">All</mat-button-toggle>
-          <mat-button-toggle value="pending">Undecided</mat-button-toggle>
+          <mat-button-toggle value="pending">Undecided ({{ counts().pending }})</mat-button-toggle>
           <mat-button-toggle value="shortlisted">Shortlisted ({{ counts().shortlisted }})</mat-button-toggle>
           <mat-button-toggle value="rejected">Rejected ({{ counts().rejected }})</mat-button-toggle>
         </mat-button-toggle-group>
@@ -180,6 +180,9 @@
                     matTooltip="Reject"
                     aria-label="Reject"
                   ><mat-icon>thumb_down</mat-icon></button>
+                  <span class="decision-label small" [class.ok]="c.decision === 'shortlisted'" [class.bad]="c.decision === 'rejected'">
+                    {{ c.decision === 'shortlisted' ? 'Shortlisted' : c.decision === 'rejected' ? 'Rejected' : 'Undecided' }}
+                  </span>
                   @if (c.notes) { <mat-icon class="muted note" [matTooltip]="c.notes">sticky_note_2</mat-icon> }
                 </div>
               }
